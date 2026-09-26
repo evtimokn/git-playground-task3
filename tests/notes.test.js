@@ -1,7 +1,11 @@
 const test = require("node:test");
 const assert = require("node:assert");
+const fs = require("fs");
+const path = require("path");
 
-const { matches } = require("../lib/store");
+const { matches, count } = require("../lib/store");
+
+const NOTES_FILE = path.join(__dirname, "..", "notes.json");
 
 const notes = [
   { id: 1, text: "buy milk" },
@@ -28,4 +32,20 @@ test("search returns nothing when no note contains the term", () => {
 test("search is case-insensitive", () => {
   const result = matches(notes, "MILK");
   assert.strictEqual(result.length, 2);
+});
+
+test("count returns the number of stored notes", () => {
+  const existed = fs.existsSync(NOTES_FILE);
+  const backup = existed ? fs.readFileSync(NOTES_FILE, "utf8") : null;
+
+  try {
+    fs.writeFileSync(NOTES_FILE, JSON.stringify({ nextId: 4, notes }));
+    assert.strictEqual(count(), 3);
+  } finally {
+    if (existed) {
+      fs.writeFileSync(NOTES_FILE, backup);
+    } else {
+      fs.rmSync(NOTES_FILE, { force: true });
+    }
+  }
 });
